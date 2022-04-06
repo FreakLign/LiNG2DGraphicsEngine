@@ -5,6 +5,7 @@
 using namespace std;
 
 void Initialize() {
+	glfwInit();
 	glfwWindowHint(GLFW_SAMPLES, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -21,15 +22,21 @@ GLFWwindow* CreateGLWindow(int width, int height, const char* windowName) {
 	}
 	glfwMakeContextCurrent(window);
 	if (glewInit() != GLEW_OK) {
-		cout << "Create Window Error" << endl;
+		cout << "Initial Window Error" << endl;
 		return 0;
 	}
 	return window;
 }
 
 int main() {
+	Initialize();
 	GLFWwindow* window = CreateGLWindow(640, 480, "Test");
 	if (window == 0)return -1;
-	
-	
+	while (1) {
+		glClear(GL_COLOR_BUFFER_BIT);
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+	glfwDestroyWindow(window);
+	glfwTerminate();
 }
