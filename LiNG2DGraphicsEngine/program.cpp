@@ -19,19 +19,19 @@ int main() {
 	BasicChart* chart;
 	chart = new BasicChart(2560, 500, "Test");
 	int datCount = BUFSIZE;
-	chart->SetVisualParas(datCount);
+	chart->SetVisualParas(datCount, -2000.0, 2000.0);
 
 	HANDLE          wait;
-	HWAVEIN hWaveIn;  
-	WAVEFORMATEX waveform; 
+	HWAVEIN hWaveIn;
+	WAVEFORMATEX waveform;
 	char* pBuffer1;
-	WAVEHDR wHdr1; 
+	WAVEHDR wHdr1;
 	waveform.wFormatTag = WAVE_FORMAT_PCM;
 	waveform.nSamplesPerSec = SAMPLERATE;
 	waveform.wBitsPerSample = BITS_PER_SAMPLE;
 	waveform.nChannels = CHANNEL_COUNT;
 	waveform.nAvgBytesPerSec = SAMPLERATE * CHANNEL_COUNT * BITS_PER_SAMPLE / 8;
-	waveform.nBlockAlign = CHANNEL_COUNT * BITS_PER_SAMPLE / 8; 
+	waveform.nBlockAlign = CHANNEL_COUNT * BITS_PER_SAMPLE / 8;
 	waveform.cbSize = 0;
 	wait = CreateEvent(NULL, 0, 0, NULL);
 	waveInOpen(&hWaveIn, WAVE_MAPPER, &waveform, (DWORD_PTR)wait, 0L, CALLBACK_EVENT);
@@ -59,26 +59,27 @@ int main() {
 			waveInAddBuffer(hWaveIn, &wHdr1, sizeof(WAVEHDR));
 			waveInStart(hWaveIn);
 			Sleep(10);
-			ippsConvert_16s32f((short*)(pBuffer1), fTempData + BUFSIZE + (pos_tail / 2), wHdr1.dwBytesRecorded / 2);
+			/*ippsConvert_16s32f((short*)(pBuffer1), fTempData + BUFSIZE + (pos_tail / 2), wHdr1.dwBytesRecorded / 2);
 			for (auto fitem = fTempData + BUFSIZE + (pos_tail / 2); fitem < (fTempData + BUFSIZE + (pos_tail / 2) + wHdr1.dwBytesRecorded / 2); fitem++)
 			{
 				auto fv = (*fitem) / 1000.0;
 				if (fv > 0) {
-					(*fitem) = (1.0f - expf(0 -  4.0f * fv)) / 2.0f;
+					(*fitem) = (1.0f - expf(0 - 4.0f * fv)) / 2.0f;
 				}
 				else {
 					(*fitem) = (expf(4.0f * fv) - 1.0f) / 2.0f;
 				}
-			}
+			}*/
 			//fwrite(pBuffer1, wHdr1.dwBytesRecorded, 1, f_towrite);
 			//fwrite(fTempData + BUFSIZE + (pos_tail / 2), wHdr1.dwBytesRecorded * 2, 1, f_towrite);
-			ippsRealToCplx_32f(fIndex, fTempData + (pos_tail / 2), (Ipp32fc*)fPoints, BUFSIZE);
-			chart->InputData(fPoints, BUFSIZE);
-			pos_tail += wHdr1.dwBytesRecorded;
+			//ippsRealToCplx_32f(fIndex, fTempData + (pos_tail / 2), (Ipp32fc*)fPoints, BUFSIZE);
+			ippsConvert_16s32f((short*)(pBuffer1), fTempData, wHdr1.dwBytesRecorded / 2);
+			chart->InputData(fTempData, wHdr1.dwBytesRecorded / 2);
+			/*pos_tail += wHdr1.dwBytesRecorded;
 			if (pos_tail >= BUFSIZE * 2) {
 				ippsCopy_32f(fTempData + BUFSIZE, fTempData, BUFSIZE);
 				pos_tail -= BUFSIZE * 2;
-			}
+			}*/
 			waveInReset(hWaveIn);//ÖÐÖ¹Â¼Òô 
 		}
 		delete pBuffer1;

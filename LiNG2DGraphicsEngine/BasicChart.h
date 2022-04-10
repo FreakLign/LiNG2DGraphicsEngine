@@ -30,28 +30,56 @@
 #include <thread>
 #include <future>
 #include <shared_mutex>
+#include <ipps.h>
 
 using namespace std;
 
 class BasicChart
 {
 private:
+	// GL Window handle.
 	GLFWwindow* m_window = 0;
-	thread m_renderThrd;
+
+	// Data Buffering Memory.
+	// The size of the buffer space is twice of point count.
 	GLfloat* m_bufferingData = 0;
+
+	// Index Buffer.
+	// Initialized when the xpoint size was specified.
+	GLfloat* m_indexBuffer = 0;
+
+	// Drawing points data buffer. <Maybe not used.>
 	GLfloat* m_drawingData = 0;
+
+	GLfloat* m_drawingValues = 0;
+
+	// The tail of buffered data.
 	int m_bufferPos = 0;
+
+	// GL Buffer.
 	GLuint m_VAO = 0, m_VBO = 0;
+
+	// Shader program.
 	GLuint m_shaderProgram = 0;
+
+	// Mutex lock.
 	shared_timed_mutex m_mtx;
 
+	// The count of 2d array datas.
 	int x_size = 2;
+
+	// The maxinum and minimum of the Y coordinat zone.
+	GLdouble y_max = 0.f, y_min = 0.f;
+
+	// Vertex shader source.
 	const char* vertexShaderSource = "#version 440 core\n"
 		"layout (location = 0) in vec3 aPos;\n"
 		"void main()\n"
 		"{\n"
 		"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
 		"}\0";
+
+	// Fragment shader source.
 	const char* fragmentShaderSource = "#version 440 core\n"
 		"out vec4 FragColor;\n"
 		"void main()\n"
@@ -97,6 +125,17 @@ private:
 		glBindVertexArray(0);
 	}
 
+	void ComputePoints() {
+		// Get rannge.
+		GLdouble y_arrenge = abs(y_max - y_min);
+
+		// Convert the values to y values of points.
+		ippsDivC_32f(m_bufferingData + m_bufferPos, GLfloat(y_arrenge), m_drawingValues, x_size);
+
+		// Combine index and values to points.
+		ippsRealToCplx_32f(m_indexBuffer, m_drawingValues, (Ipp32fc*)m_drawingData, x_size);
+	}
+
 public:
 	BasicChart() {
 		Initialize();
@@ -122,11 +161,37 @@ public:
 		gladLoadGL();
 	}
 public:
-	void SetVisualParas(int xpointcount) {
+	void SetVisualParas(int xpointcount, double ymin, double ymax) {
 		x_size = xpointcount;
-		m_bufferingData = new GLfloat[4 * size_t(x_size)];
-		memset(m_bufferingData, 0, size_t(x_size) * 4ull * sizeof(GLfloat)); // Double Buffer
-		m_drawingData = m_bufferingData;
+		y_max = ymax;
+		y_min = ymin;
+
+		// Reset the tail position to 0.
+		m_bufferPos = 0;
+
+		// Reconstruct the drawing values buffer.
+		if (m_drawingValues != 0) delete[] m_drawingValues;
+		m_drawingValues = new GLfloat[x_size];
+
+		// Reconstruct the data buffer.
+		if (m_bufferingData != 0) delete[] m_bufferingData;
+		m_bufferingData = new GLfloat[2 * size_t(x_size)];
+		memset(m_bufferingData, 0, 2 * size_t(x_size) * sizeof(GLfloat));
+
+		// Reconstruct the index buffer.
+		if (m_indexBuffer != 0) delete[] m_indexBuffer;
+		m_indexBuffer = new GLfloat[x_size];
+
+		// Initialize the index values.
+		for (size_t i = 0; i < x_size; i++)
+		{
+			m_indexBuffer[i] = (float(i) - float(float(x_size) / 2.f)) / (float(x_size) / 2.f);
+		}
+
+		// Initailize the drawing points buffer.
+		m_drawingData = new GLfloat[2 * size_t(x_size)];
+
+		ComputePoints();
 	}
 
 	void Start() {
@@ -146,25 +211,33 @@ public:
 			glClear(GL_COLOR_BUFFER_BIT);
 			glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
 			//unique_lock<shared_timed_mutex>(m_mtx);
-			glBufferData(GL_ARRAY_BUFFER, (size_t)x_size * 2 * sizeof(GLfloat), m_drawingData, GL_STATIC_DRAW);
+			//m_mtx.lock();
+			glBufferData(GL_ARRAY_BUFFER, (size_t)x_size * 2 * sizeof(GLfloat), m_drawingData, GL_DYNAMIC_DRAW);
 			glUseProgram(m_shaderProgram);
 			glBindVertexArray(m_VAO);
 			glDrawArrays(GL_LINE_STRIP, 0, x_size);
 			glfwSwapBuffers(m_window);
+			//m_mtx.unlock();
 			glfwPollEvents();
 		}
 	}
 
 	void InputData(float* datas, int dataCount) {
-		int lastDataLen = dataCount;
-		//unique_lock<shared_timed_mutex>(m_mtx);
-		while (m_bufferPos + lastDataLen > x_size) {
-			memcpy(m_bufferingData + m_bufferPos * 2, datas + size_t(dataCount - lastDataLen) * 2, (x_size - m_bufferPos) * 2 * sizeof(float));
-			lastDataLen = lastDataLen - x_size + m_bufferPos;
-			m_bufferPos = 0;
+		auto tempData = datas;
+
+		// Remove additional datas.
+		// These part of data is not going to render in this frame.
+		if (dataCount > x_size) {
+			tempData = datas + dataCount - x_size;
 		}
-		memcpy(m_bufferingData + m_bufferPos * 2, datas + (dataCount - lastDataLen) * 2, lastDataLen * 2 * sizeof(float));
-		m_drawingData = m_bufferingData + m_bufferPos;
+
+		memcpy(m_bufferingData + x_size + m_bufferPos, datas, dataCount * sizeof(float));
+		ComputePoints();
+		m_bufferPos += dataCount;
+		if (m_bufferPos >= x_size) {
+			memcpy(m_bufferingData, m_bufferingData + x_size, x_size * sizeof(float));
+			m_bufferPos -= x_size;
+		}
 	}
 
 	void Stop() {
