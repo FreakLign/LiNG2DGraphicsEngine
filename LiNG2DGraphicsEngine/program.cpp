@@ -11,7 +11,7 @@
 #pragma comment(lib, "winmm.lib")
 
 #define BUFSIZE				65536
-#define SAMPLERATE			32000
+#define SAMPLERATE			64000
 #define BITS_PER_SAMPLE		16
 #define CHANNEL_COUNT		1
 
@@ -59,38 +59,19 @@ int main() {
 			waveInAddBuffer(hWaveIn, &wHdr1, sizeof(WAVEHDR));
 			waveInStart(hWaveIn);
 			Sleep(10);
-			/*ippsConvert_16s32f((short*)(pBuffer1), fTempData + BUFSIZE + (pos_tail / 2), wHdr1.dwBytesRecorded / 2);
-			for (auto fitem = fTempData + BUFSIZE + (pos_tail / 2); fitem < (fTempData + BUFSIZE + (pos_tail / 2) + wHdr1.dwBytesRecorded / 2); fitem++)
-			{
-				auto fv = (*fitem) / 1000.0;
-				if (fv > 0) {
-					(*fitem) = (1.0f - expf(0 - 4.0f * fv)) / 2.0f;
-				}
-				else {
-					(*fitem) = (expf(4.0f * fv) - 1.0f) / 2.0f;
-				}
-			}*/
-			//fwrite(pBuffer1, wHdr1.dwBytesRecorded, 1, f_towrite);
-			//fwrite(fTempData + BUFSIZE + (pos_tail / 2), wHdr1.dwBytesRecorded * 2, 1, f_towrite);
-			//ippsRealToCplx_32f(fIndex, fTempData + (pos_tail / 2), (Ipp32fc*)fPoints, BUFSIZE);
 			ippsConvert_16s32f((short*)(pBuffer1), fTempData, wHdr1.dwBytesRecorded / 2);
 			for (auto fitem = fTempData; fitem < (fTempData + wHdr1.dwBytesRecorded / 2); fitem++)
 			{
 				auto fv = (*fitem) / 1000.0;
 				if (fv > 0) {
-					(*fitem) = (1.0f - expf(0 - 4.0f * fv)) / 2.0f;
+					(*fitem) = (1.0f - expf(0 - fv));
 				}
 				else {
-					(*fitem) = (expf(4.0f * fv) - 1.0f) / 2.0f;
+					(*fitem) = (expf(fv) - 1.0f);
 				}
 			}
 			chart->InputData(fTempData, wHdr1.dwBytesRecorded / 2);
-			/*pos_tail += wHdr1.dwBytesRecorded;
-			if (pos_tail >= BUFSIZE * 2) {
-				ippsCopy_32f(fTempData + BUFSIZE, fTempData, BUFSIZE);
-				pos_tail -= BUFSIZE * 2;
-			}*/
-			waveInReset(hWaveIn);//ÖÐÖ¹Â¼Òô 
+			waveInReset(hWaveIn);
 		}
 		delete pBuffer1;
 		});

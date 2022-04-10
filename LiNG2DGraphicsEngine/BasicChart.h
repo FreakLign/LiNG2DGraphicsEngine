@@ -128,9 +128,11 @@ private:
 	void ComputePoints() {
 		// Get rannge.
 		GLdouble y_arrenge = abs(y_max - y_min);
+		GLdouble y_mid = (y_max + y_min) / 2.0;
 
 		// Convert the values to y values of points.
-		ippsDivC_32f(m_bufferingData + m_bufferPos, GLfloat(y_arrenge), m_drawingValues, x_size);
+		ippsSubC_32f(m_bufferingData + m_bufferPos, GLfloat(y_mid), m_drawingValues, x_size);
+		ippsDivC_32f_I(GLfloat(y_arrenge / 2.0), m_bufferingData + m_bufferPos, x_size);
 
 		// Combine index and values to points.
 		ippsRealToCplx_32f(m_indexBuffer, m_drawingValues, (Ipp32fc*)m_drawingData, x_size);
@@ -228,13 +230,13 @@ public:
 		// These part of data is not going to render in this frame.
 		if (dataCount + m_bufferPos >= x_size) {
 			tempData = datas + m_bufferPos + dataCount - x_size;
-			ippsCopy_32f(m_bufferingData + x_size, m_bufferingData, x_size);
+			memcpy(m_bufferingData, m_bufferingData + x_size, x_size * sizeof(float));
 			m_bufferPos -= x_size;
 		}
-
-		memcpy(m_bufferingData + (x_size + m_bufferPos), tempData, (dataCount) * sizeof(float));
-		ComputePoints();
+		size_t posShift = size_t(x_size + m_bufferPos);
+		memcpy(m_bufferingData + posShift, tempData, (dataCount) * sizeof(float));
 		m_bufferPos += dataCount;
+		ComputePoints();
 	}
 
 	void Stop() {
