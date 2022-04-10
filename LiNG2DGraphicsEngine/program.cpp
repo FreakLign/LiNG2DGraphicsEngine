@@ -21,6 +21,7 @@ int main() {
 	int datCount = BUFSIZE;
 	chart->SetVisualParas(datCount, -1, 1);
 
+
 	HANDLE          wait;
 	HWAVEIN hWaveIn;
 	WAVEFORMATEX waveform;
