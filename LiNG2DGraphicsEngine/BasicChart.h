@@ -226,14 +226,13 @@ public:
 		auto tempData = datas;
 		// Remove additional datas.
 		// These part of data is not going to render in this frame.
-		if (dataCount + m_bufferPos > x_size) {
+		if (dataCount + m_bufferPos >= x_size) {
 			tempData = datas + m_bufferPos + dataCount - x_size;
 			ippsCopy_32f(m_bufferingData + x_size, m_bufferingData, x_size);
 			m_bufferPos -= x_size;
-
 		}
 
-		memcpy(m_bufferingData + x_size + m_bufferPos, tempData, (dataCount) * sizeof(float));
+		memcpy(m_bufferingData + (x_size + m_bufferPos), tempData, (dataCount) * sizeof(float));
 		ComputePoints();
 		m_bufferPos += dataCount;
 	}
