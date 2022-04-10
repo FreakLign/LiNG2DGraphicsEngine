@@ -224,20 +224,18 @@ public:
 
 	void InputData(float* datas, int dataCount) {
 		auto tempData = datas;
-
 		// Remove additional datas.
 		// These part of data is not going to render in this frame.
-		if (dataCount > x_size) {
-			tempData = datas + dataCount - x_size;
+		if (dataCount + m_bufferPos > x_size) {
+			tempData = datas + m_bufferPos + dataCount - x_size;
+			ippsCopy_32f(m_bufferingData + x_size, m_bufferingData, x_size);
+			m_bufferPos -= x_size;
+
 		}
 
-		memcpy(m_bufferingData + x_size + m_bufferPos, datas, dataCount * sizeof(float));
+		memcpy(m_bufferingData + x_size + m_bufferPos, tempData, (dataCount) * sizeof(float));
 		ComputePoints();
 		m_bufferPos += dataCount;
-		if (m_bufferPos >= x_size) {
-			memcpy(m_bufferingData, m_bufferingData + x_size, x_size * sizeof(float));
-			m_bufferPos -= x_size;
-		}
 	}
 
 	void Stop() {

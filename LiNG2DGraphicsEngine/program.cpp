@@ -10,8 +10,8 @@
 
 #pragma comment(lib, "winmm.lib")
 
-#define BUFSIZE				655360
-#define SAMPLERATE			64000
+#define BUFSIZE				65536
+#define SAMPLERATE			32000
 #define BITS_PER_SAMPLE		16
 #define CHANNEL_COUNT		1
 
