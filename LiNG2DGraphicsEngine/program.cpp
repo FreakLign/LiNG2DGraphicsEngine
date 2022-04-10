@@ -17,21 +17,21 @@
 
 int main() {
 	BasicChart* chart;
-	chart = new BasicChart(2560, 1080, "Test");
+	chart = new BasicChart(2560, 500, "Test");
 	int datCount = BUFSIZE;
 	chart->SetVisualParas(datCount);
 
 	HANDLE          wait;
-	HWAVEIN hWaveIn;  //输入设备  
-	WAVEFORMATEX waveform; //采集音频的格式，结构体  
-	char* pBuffer1;//采集音频时的数据缓存  
-	WAVEHDR wHdr1; //采集音频时包含数据缓存的结构体
-	waveform.wFormatTag = WAVE_FORMAT_PCM;//声音格式为PCM  
-	waveform.nSamplesPerSec = SAMPLERATE;//采样率
-	waveform.wBitsPerSample = BITS_PER_SAMPLE;//采样比特，16bits/次  
-	waveform.nChannels = CHANNEL_COUNT;//采样声道数，1声道  
-	waveform.nAvgBytesPerSec = SAMPLERATE * CHANNEL_COUNT * BITS_PER_SAMPLE / 8;//每秒的数据率，就是每秒能采集多少字节的数据  
-	waveform.nBlockAlign = CHANNEL_COUNT * BITS_PER_SAMPLE / 8;//一个块的大小，采样bit的字节数乘以声道数  
+	HWAVEIN hWaveIn;  
+	WAVEFORMATEX waveform; 
+	char* pBuffer1;
+	WAVEHDR wHdr1; 
+	waveform.wFormatTag = WAVE_FORMAT_PCM;
+	waveform.nSamplesPerSec = SAMPLERATE;
+	waveform.wBitsPerSample = BITS_PER_SAMPLE;
+	waveform.nChannels = CHANNEL_COUNT;
+	waveform.nAvgBytesPerSec = SAMPLERATE * CHANNEL_COUNT * BITS_PER_SAMPLE / 8;
+	waveform.nBlockAlign = CHANNEL_COUNT * BITS_PER_SAMPLE / 8; 
 	waveform.cbSize = 0;
 	wait = CreateEvent(NULL, 0, 0, NULL);
 	waveInOpen(&hWaveIn, WAVE_MAPPER, &waveform, (DWORD_PTR)wait, 0L, CALLBACK_EVENT);
@@ -64,10 +64,10 @@ int main() {
 			{
 				auto fv = (*fitem) / 1000.0;
 				if (fv > 0) {
-					(*fitem) = (1.0f - expf(0 - fv)) / 2.0f;
+					(*fitem) = (1.0f - expf(0 -  4.0f * fv)) / 2.0f;
 				}
 				else {
-					(*fitem) = (expf(fv) - 1.0f) / 2.0f;
+					(*fitem) = (expf(4.0f * fv) - 1.0f) / 2.0f;
 				}
 			}
 			//fwrite(pBuffer1, wHdr1.dwBytesRecorded, 1, f_towrite);

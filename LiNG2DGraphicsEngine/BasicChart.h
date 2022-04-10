@@ -138,7 +138,7 @@ public:
 			auto t1 = clock();
 			if (t1 - t0 >= 500) {
 				t0 = t1;
-				//cout << "FPS: " << frameCounter * 2 << endl;
+				cout << "FPS: " << frameCounter * 2 << endl;
 				frameCounter = 0;
 			}
 			frameCounter++;
