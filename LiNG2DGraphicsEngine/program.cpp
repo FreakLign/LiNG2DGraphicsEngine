@@ -19,7 +19,7 @@ int main() {
 	BasicChart* chart;
 	chart = new BasicChart(2560, 500, "Test");
 	int datCount = BUFSIZE;
-	chart->SetVisualParas(datCount, -2000.0, 2000.0);
+	chart->SetVisualParas(datCount, -1, 1);
 
 	HANDLE          wait;
 	HWAVEIN hWaveIn;
@@ -74,6 +74,16 @@ int main() {
 			//fwrite(fTempData + BUFSIZE + (pos_tail / 2), wHdr1.dwBytesRecorded * 2, 1, f_towrite);
 			//ippsRealToCplx_32f(fIndex, fTempData + (pos_tail / 2), (Ipp32fc*)fPoints, BUFSIZE);
 			ippsConvert_16s32f((short*)(pBuffer1), fTempData, wHdr1.dwBytesRecorded / 2);
+			for (auto fitem = fTempData; fitem < (fTempData + wHdr1.dwBytesRecorded / 2); fitem++)
+			{
+				auto fv = (*fitem) / 1000.0;
+				if (fv > 0) {
+					(*fitem) = (1.0f - expf(0 - 4.0f * fv)) / 2.0f;
+				}
+				else {
+					(*fitem) = (expf(4.0f * fv) - 1.0f) / 2.0f;
+				}
+			}
 			chart->InputData(fTempData, wHdr1.dwBytesRecorded / 2);
 			/*pos_tail += wHdr1.dwBytesRecorded;
 			if (pos_tail >= BUFSIZE * 2) {
