@@ -160,6 +160,7 @@ public:
 			return;
 		}
 		glfwMakeContextCurrent(m_window);
+		gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		gladLoadGL();
 	}
 public:

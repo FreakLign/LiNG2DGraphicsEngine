@@ -10,10 +10,10 @@
 
 #pragma comment(lib, "winmm.lib")
 
-#define BUFSIZE				65536
-#define SAMPLERATE			64000
+#define BUFSIZE				655360
+#define SAMPLERATE			12800
 #define BITS_PER_SAMPLE		16
-#define CHANNEL_COUNT		1
+#define CHANNEL_COUNT		2
 
 int main() {
 	BasicChart* chart;
@@ -39,8 +39,8 @@ int main() {
 	DWORD bufsize = BUFSIZE;
 	FILE* f_towrite = fopen("dat0.dat", "wb");
 	thread t = thread([&] {
-		pBuffer1 = new char[SAMPLERATE * CHANNEL_COUNT * BITS_PER_SAMPLE / 80];
-		wHdr1.dwBufferLength = SAMPLERATE * CHANNEL_COUNT * BITS_PER_SAMPLE / 80;
+		pBuffer1 = new char[SAMPLERATE * CHANNEL_COUNT * BITS_PER_SAMPLE / 40];
+		wHdr1.dwBufferLength = SAMPLERATE * CHANNEL_COUNT * BITS_PER_SAMPLE / 40;
 		wHdr1.dwBytesRecorded = 0;
 		wHdr1.dwUser = 0;
 		wHdr1.dwFlags = 0;
@@ -59,9 +59,11 @@ int main() {
 			waveInPrepareHeader(hWaveIn, &wHdr1, sizeof(WAVEHDR));
 			waveInAddBuffer(hWaveIn, &wHdr1, sizeof(WAVEHDR));
 			waveInStart(hWaveIn);
-			Sleep(10);
+			Sleep(20);
+			fwrite(pBuffer1, wHdr1.dwBytesRecorded, 1, f_towrite);
 			ippsConvert_16s32f((short*)(pBuffer1), fTempData, wHdr1.dwBytesRecorded / 2);
-			for (auto fitem = fTempData; fitem < (fTempData + wHdr1.dwBytesRecorded / 2); fitem++)
+			//ippsCopy_32f((float*)(pBuffer1), fTempData, wHdr1.dwBytesRecorded / 4);
+			for (auto fitem = fTempData; fitem < (fTempData + wHdr1.dwBytesRecorded / 4); fitem++)
 			{
 				auto fv = (*fitem) / 1000.0;
 				if (fv > 0) {
@@ -71,7 +73,7 @@ int main() {
 					(*fitem) = (expf(fv) - 1.0f);
 				}
 			}
-			chart->InputData(fTempData, wHdr1.dwBytesRecorded / 2);
+			chart->InputData(fTempData, wHdr1.dwBytesRecorded / 4);
 			waveInReset(hWaveIn);
 		}
 		delete pBuffer1;
